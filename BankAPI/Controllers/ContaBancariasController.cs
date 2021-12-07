@@ -166,25 +166,32 @@ namespace BankAPI.Controllers
 
             return Ok(result);
         }
-
+        public class SomatoriaMes
+        {
+            public int mes { get; set; }
+            public decimal valor { get; set; }
+        }
         //Relatorio
         [HttpGet]
 
         public ActionResult<HistoricoEntity> RelatorioGet(int contaBancaria, int anual)
         {
 
-            
-            var relatorio = _context.Historico
-                  .Where(_context => _context.ContaBancaria == contaBancaria && _context.Data.Year == anual)
-               
-                  .Select(_context =>     
-                      new {
-                          Mês = _context.Data.Month,
-                          operacao = (_context.Operacao == 0) ? "Crédito" : "Débito",
-                      }
-                  ).ToList().Sum(_context => _context.Valor);
 
-            return Ok(relatorio);
+            var credito = _context.Historico
+                  .Where(_context => _context.ContaBancaria == contaBancaria && _context.Data.Year == anual &&_context.Operacao==Models.Data.Entities.HistoricoOperacao.Credito ).GroupBy(item=>item.Data.Month)
+                  .Select(item => new SomatoriaMes{mes=item.Key, valor=item.Sum(i=>i.Valor)  }).ToList();
+
+            var debito = _context.Historico
+                 .Where(_context => _context.ContaBancaria == contaBancaria && _context.Data.Year == anual && _context.Operacao == Models.Data.Entities.HistoricoOperacao.Debito).GroupBy(item => item.Data.Month)
+                 .Select(item => new SomatoriaMes { mes = item.Key, valor = item.Sum(i => i.Valor) }).ToList();
+            foreach (var item in credito)
+            {
+                item.valor -= debito.FirstOrDefault(debitos => debitos.mes == item.mes).valor;
+            }
+                
+
+            return Ok(credito);
         }
 
     }
