@@ -21,18 +21,41 @@ namespace BankAPI.Controllers
         {
             _context = context;
         }
-
+      
 
         // POST: api/ContaBancarias
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost("Credito")]
         public IActionResult PostCredito([FromBody] HistoricoModel model)
         {
+            //var totalCredito = _context.Historico.Where(_context => _context.ContaBancaria == model.ContaBancaria && _context.Operacao == Models.Data.Entities.HistoricoOperacao.Credito).Sum(_context => _context.Valor);
+            //var totalDebito = _context.Historico.Where(_context => _context.ContaBancaria == model.ContaBancaria && _context.Operacao == Models.Data.Entities.HistoricoOperacao.Debito).Sum(_context => _context.Valor);
 
-            var totalCredito = _context.Historico.Where(_context =>_context.ContaBancaria==model.ContaBancaria && _context.Operacao == Models.Data.Entities.HistoricoOperacao.Credito).Sum(_context => _context.Valor);
-            var totalDebito = _context.Historico.Where(_context => _context.ContaBancaria == model.ContaBancaria && _context.Operacao == Models.Data.Entities.HistoricoOperacao.Debito).Sum(_context => _context.Valor);
+            //var totalSaldo = model.Valor + (totalCredito - totalDebito);
 
-            var totalSaldo = model.Valor + (totalCredito - totalDebito) ;
+
+            //var total = new
+            //{
+            //    totalCredito = _context.Historico.Where(_context => _context.ContaBancaria == model.ContaBancaria
+            //        && _context.Operacao == Models.Data.Entities.HistoricoOperacao.Credito)
+            //            .Sum(_context => _context.Valor),
+            //    totalDebito = _context.Historico.Where(_context => _context.ContaBancaria == model.ContaBancaria
+            //        && _context.Operacao == Models.Data.Entities.HistoricoOperacao.Debito)
+            //            .Sum(_context => _context.Valor),
+            //    totalSaldo = _context.Historico.Where(_context => _context.ContaBancaria == model.ContaBancaria)
+            //            .Sum(_context => _context.Operacao == Models.Data.Entities.HistoricoOperacao.Debito
+            //                ? -_context.Valor : _context.Valor) + model.Valor
+            //};
+
+            decimal Saldo(HistoricoModel model)
+            {
+                decimal totalCredito = _context.Historico.Where(context => context.ContaBancaria == model.ContaBancaria 
+                    && _context.Operacao == Models.Data.Entities.HistoricoOperacao.Credito).Sum(context => context.Valor);
+                decimal totalDebito = _context.Historico.Where(context => context.ContaBancaria == model.ContaBancaria 
+                    && _context.Operacao == Models.Data.Entities.HistoricoOperacao.Debito).Sum(context => context.Valor);
+
+                return (totalCredito -= totalDebito) + model.Valor;
+            }
 
             var _historicoEntity = new HistoricoEntity
             {
@@ -42,8 +65,6 @@ namespace BankAPI.Controllers
                 ContaBancaria = model.ContaBancaria,
 
             };
-
-
 
             // se valor > zero
             if (model.Valor > 0)
@@ -60,36 +81,43 @@ namespace BankAPI.Controllers
                 catch (Exception e)
                 {
                     Console.WriteLine(e);
-                }
+                }   
 
                 // retornar sucesso = true ou false, valor creditado, saldo
-                return Ok(
-                new
-                {
-                    msg = "Operação realizada com Sucesso, valor creditado: R$ " + model.Valor
-                        + " Saldo Atual: R$ " + totalSaldo
+                return Ok( new OperacaoRetornoModel { 
+                    Saldo  = Saldo(model),
+                    Valor = model.Valor
                 });
             }
             else
             {
                 return BadRequest(new { msg = "Valor R$ " + model.Valor + " é inválido" });
             }
-
-
         }
 
         [HttpPost("Debito")]
         public IActionResult PostDebito([FromBody] HistoricoModel model)
         {
-            var totalCredito = _context.Historico.Where(_context => _context.ContaBancaria == model.ContaBancaria && _context.Operacao == Models.Data.Entities.HistoricoOperacao.Credito).Sum(_context => _context.Valor);
-            var totalDebito = _context.Historico.Where(_context => _context.ContaBancaria == model.ContaBancaria && _context.Operacao == Models.Data.Entities.HistoricoOperacao.Debito).Sum(_context => _context.Valor);
+            var total = new {
+                    totalCredito = _context.Historico.Where(_context => _context.ContaBancaria == model.ContaBancaria
+                        && _context.Operacao == Models.Data.Entities.HistoricoOperacao.Credito)
+                        .Sum(_context => _context.Valor),
+                    totalDebito = _context.Historico.Where(_context => _context.ContaBancaria == model.ContaBancaria
+                        && _context.Operacao == Models.Data.Entities.HistoricoOperacao.Debito)
+                        .Sum(_context => _context.Valor),
+                    totalSaldo = _context.Historico.Where(_context => _context.ContaBancaria == model.ContaBancaria)
+                        .Sum(_context => _context.Operacao == Models.Data.Entities.HistoricoOperacao.Debito 
+                            ? -_context.Valor : _context.Valor) - model.Valor
+            };
 
-            var totalSaldo = (totalCredito - totalDebito) - model.Valor;
 
-            if (totalSaldo < 0)
+            var totalSaldo = (total.totalSaldo) - model.Valor;
+
+            if (total.totalSaldo < 0)
             {
-                return BadRequest(new { 
-                    msg = "Você não pode debitar mais do que o saldo" 
+                return BadRequest(new
+                {
+                    msg = "Valor do saldo execedido!"
                 });
             }
 
@@ -117,17 +145,16 @@ namespace BankAPI.Controllers
                 }
 
                 // retornar sucesso = true ou false, valor debitado, saldo
-                return Ok(
-                new
+                // retornar sucesso = true ou false, valor creditado, saldo
+                return Ok(new OperacaoRetornoModel
                 {
-                    msg = "Operação realizada com Sucesso, valor debitado: R$ " + model.Valor
-                        + " Saldo Atual: R$ " + totalSaldo
+                    Saldo = total.totalSaldo,
+                    Valor = model.Valor
                 });
             }
-
             else
             {
-                return BadRequest(new { msg = "Valor R$ " + model.Valor + " é  inválido" });
+                return BadRequest(new { msg = "Valor R$ " + model.Valor + " é inválido" });
             }
 
         }
@@ -168,8 +195,8 @@ namespace BankAPI.Controllers
         }
         public class SomatoriaMes
         {
-            public int mes { get; set; }
-            public decimal valor { get; set; }
+            public int Mes { get; set; }
+            public decimal Valor { get; set; }
         }
         //Relatorio
         [HttpGet]
@@ -177,21 +204,42 @@ namespace BankAPI.Controllers
         public ActionResult<HistoricoEntity> RelatorioGet(int contaBancaria, int anual)
         {
 
+            //var result = new
+            //{
+            //    credito = _context.Historico
+            //      .Where(_context => _context.ContaBancaria == contaBancaria && _context.Data.Year == anual && _context.Operacao == Models.Data.Entities.HistoricoOperacao.Credito)
+            //      .GroupBy(item => item.Data.Month)
+            //      .Select(item => new SomatoriaMes { Mes = item.Key, Valor = item.Sum(i => i.Valor) }).ToList(),
+            //    debito = _context.Historico
+            //     .Where(_context => _context.ContaBancaria == contaBancaria && _context.Data.Year == anual && _context.Operacao == Models.Data.Entities.HistoricoOperacao.Debito).GroupBy(item => item.Data.Month)
+            //     .Select(item => new SomatoriaMes { Mes = item.Key, Valor = item.Sum(i => i.Valor) }).ToList(),
 
-            var credito = _context.Historico
-                  .Where(_context => _context.ContaBancaria == contaBancaria && _context.Data.Year == anual &&_context.Operacao==Models.Data.Entities.HistoricoOperacao.Credito ).GroupBy(item=>item.Data.Month)
-                  .Select(item => new SomatoriaMes{mes=item.Key, valor=item.Sum(i=>i.Valor)  }).ToList();
+            //    saldo = _context.Historico
+            //      .Where(_context => _context.ContaBancaria == contaBancaria && _context.Data.Year == anual && _context.Operacao == Models.Data.Entities.HistoricoOperacao.Credito).GroupBy(item => item.Data.Month)
+            //      .Select(item => new SomatoriaMes { Mes = item.Key, Valor = item.Sum(i => i.Valor) }).ToList()
+            //};
 
-            var debito = _context.Historico
-                 .Where(_context => _context.ContaBancaria == contaBancaria && _context.Data.Year == anual && _context.Operacao == Models.Data.Entities.HistoricoOperacao.Debito).GroupBy(item => item.Data.Month)
-                 .Select(item => new SomatoriaMes { mes = item.Key, valor = item.Sum(i => i.Valor) }).ToList();
-            foreach (var item in credito)
-            {
-                item.valor -= debito.FirstOrDefault(debitos => debitos.mes == item.mes).valor;
-            }
-                
+            //var result = new
+            //{
+            var result = _context.Historico
+                .Where(context => context.ContaBancaria == contaBancaria && context.Data.Year == anual)
+                .GroupBy(item => item.Data.Month)
+                .Select(context => new
+                {
+                    //mes=,
+                    credito = context.Where(c => c.Operacao == Models.Data.Entities.HistoricoOperacao.Credito).Sum(c => c.Valor),
+                    debito = context.Where(c => c.Operacao == Models.Data.Entities.HistoricoOperacao.Debito).Sum(c => c.Valor),
+                    saldo = context.Sum(c => c.Operacao == Models.Data.Entities.HistoricoOperacao.Debito ? -c.Valor : c.Valor)
+                });
+            //}
 
-            return Ok(credito);
+            //foreach (var item in result.saldo)
+            //{
+            //    item.Valor -= result.debito.FirstOrDefault(debitos => debitos.Mes == item.Mes)?.Valor ?? 0;
+            //};
+    
+
+            return Ok(result);
         }
 
     }

@@ -22,7 +22,6 @@ namespace BankAPI.Data.Entities
         public HistoricoOperacao Operacao { get; set; }
         public int ContaBancaria { get; set; }
         public static decimal Saldo { get; internal set; }
-
-
+       
     }
 }
