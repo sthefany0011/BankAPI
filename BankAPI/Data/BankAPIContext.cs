@@ -10,7 +10,7 @@ namespace BankAPI.Data
 {
     public class BankAPIContext : DbContext
     {
-        internal HistoricoOperacao Operacao;
+       
 
         public BankAPIContext(DbContextOptions<BankAPIContext> options)
             : base(options)
@@ -18,5 +18,6 @@ namespace BankAPI.Data
         }
 
         public DbSet<Entities.HistoricoEntity> Historico { get; set; }
+        
     }
 }

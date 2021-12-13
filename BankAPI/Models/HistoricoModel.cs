@@ -10,6 +10,8 @@ namespace BankAPI.Models
         public int ContaBancaria { get; set; }
         public decimal Valor { get; set; }
 
+        public HistoricoModel () { }
+
         public HistoricoModel(int contaBancaria, decimal valor)
         {
             ContaBancaria = contaBancaria;

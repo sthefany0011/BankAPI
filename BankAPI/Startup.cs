@@ -15,6 +15,7 @@ using Microsoft.EntityFrameworkCore;
 using BankAPI.Data;
 using System.Globalization;
 using Microsoft.AspNetCore.Localization;
+using BankAPI.Repositories;
 
 namespace BankAPI
 {
@@ -37,10 +38,13 @@ namespace BankAPI
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "BankAPI", Version = "v1" });
             });
 
+
             services.AddDbContext<BankAPIContext>(options =>
-                   options.UseMySql("server=localhost;userid=root;password=11041994;database=bankapi", 
+                   options.UseMySql("server=localhost;userid=root;password=11041994;database=bankapi",
                     new MySqlServerVersion(new Version()), builder =>
             builder.MigrationsAssembly("BankAPI")));
+
+            services.AddTransient<ContaRepository>();
 
         }
 

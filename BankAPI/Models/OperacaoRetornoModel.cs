@@ -9,5 +9,6 @@ namespace BankAPI.Models
     {
         public decimal Valor { get; set; }
         public decimal Saldo { get; set; }
+        
     }
 }
