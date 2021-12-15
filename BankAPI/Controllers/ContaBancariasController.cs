@@ -15,7 +15,7 @@ namespace BankAPI.Controllers
         private readonly BankAPIContext _context;
         private readonly ContaRepository _contaRepository;
 
-        public object moment { get; private set; }
+   
 
         public ContaBancariasController(BankAPIContext context, ContaRepository contaRepository)
         {
@@ -24,21 +24,12 @@ namespace BankAPI.Controllers
         }
 
 
-        decimal Saldo(HistoricoModel model)
-        {
-            var totalSaldo = _context.Historico.Where(a => a.ContaBancaria == model.ContaBancaria)
-                    .Sum(a => a.Operacao == Models.Data.Entities.HistoricoOperacao.Debito
-                        ? -a.Valor : a.Valor);
-
-            return totalSaldo;
-        }
-
-
         // POST: api/ContaBancarias
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost("Credito")]
         public IActionResult PostCredito([FromBody] HistoricoModel model)
         {
+
             var _historicoEntity = new HistoricoEntity
             {
                 Valor = model.Valor,
@@ -52,23 +43,15 @@ namespace BankAPI.Controllers
             if (model.Valor > 0)
             {
 
-                try
-                {
-                    //Adicionar no banco de dados SEM PASSAR NO SERVICE
-                    _context.Historico.AddRangeAsync(_historicoEntity);
-                    _context.SaveChanges();
+               
+                //Adicionar no banco de dados SEM PASSAR NO SERVICE
+                _contaRepository.Credito(_historicoEntity);
 
-
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e);
-                }
-
+                
                 // retornar sucesso = true ou false, valor creditado, saldo
                 return Ok(new OperacaoRetornoModel
                 {
-                    Saldo = Saldo(model),
+                    Saldo = _contaRepository.Saldo(model),
                     Valor = model.Valor
                 });
             }
@@ -82,7 +65,7 @@ namespace BankAPI.Controllers
         public IActionResult PostDebito([FromBody] HistoricoModel model)
         {
 
-            if (Saldo(model) <= model.Valor)
+            if (_contaRepository.Saldo(model) <= model.Valor)
             {
                 return BadRequest(new
                 {
@@ -101,21 +84,13 @@ namespace BankAPI.Controllers
             // se valor > zero
             if (model.Valor > 0)
             {
-                try
-                {
-                    _context.Historico.AddRangeAsync(_historicoEntity);
-                    _context.SaveChanges();
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e);
-                }
+                _contaRepository.Debito(_historicoEntity);
 
-                // retornar sucesso = true ou false, valor debitado, saldo
+
                 // retornar sucesso = true ou false, valor creditado, saldo
                 return Ok(new OperacaoRetornoModel
                 {
-                    Saldo = Saldo(model),
+                    Saldo = _contaRepository.Saldo(model),
                     Valor = model.Valor
                 });
             }
@@ -128,26 +103,18 @@ namespace BankAPI.Controllers
         [HttpGet("{contaBancaria}")]
         public ActionResult<HistoricoEntity> Get(int contaBancaria)
         {
-            HistoricoModel model = new HistoricoModel { ContaBancaria = contaBancaria };
 
-            var extrato = _context.Historico.OrderBy(_context => _context.Data)
-                .Where(_context => _context.ContaBancaria == contaBancaria)
-                .Select(_context =>
-                    new
-                    {
-                        operacao = (_context.Operacao == 0) ? "Crédito" : "Débito",
-                        Valor = _context.Valor,
-                        Data = _context.Data
-                    }
-                ).ToList();
+            //HistoricoModel model = new HistoricoModel { ContaBancaria = contaBancaria };
+
+            var extrato = _contaRepository.FindByAccount(contaBancaria);
 
             //"2021-12-03T09:35:30:2220Z" Format Dates / Formatar data para padrão brasileiro no csharp
 
-
+            //(contaBancaria);
             var result = new
             {
                 Operacoes = extrato,
-                Saldo = Saldo(model)
+                Saldo = _contaRepository.Saldo(new HistoricoModel { ContaBancaria = contaBancaria })
             };
 
             //var Saldo = Saldo(model);
