@@ -12,14 +12,14 @@ namespace BankAPI.Controllers
     [ApiController]
     public class ContaBancariasController : ControllerBase
     {
-        private readonly BankAPIContext _context;
+       
         private readonly ContaRepository _contaRepository;
 
    
 
-        public ContaBancariasController(BankAPIContext context, ContaRepository contaRepository)
+        public ContaBancariasController( ContaRepository contaRepository)
         {
-            _context = context;
+        
             _contaRepository = contaRepository;
         }
 
