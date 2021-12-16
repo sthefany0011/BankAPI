@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace BankAPI.Repositories
 {
-    public class ContaRepository
+    public class ContaRepository : IContaRepository
     {
         private readonly BankAPIContext _context;
 
@@ -30,17 +30,20 @@ namespace BankAPI.Repositories
 
         //Ação para inserir créditos
 
-        public void Credito(HistoricoEntity historicoEntity)
+        public bool Credito(HistoricoEntity historicoEntity)
         {
             try
             {
                 //_context.Historico.AddRangeAsync(historicoEntity);
                 _context.Historico.AddAsync(historicoEntity);
                 _context.SaveChanges();
-            } catch (Exception e)
+                return true;
+            }
+            catch (Exception e)
             {
                 Console.WriteLine(e);
             }
+            return false;
         }
 
         //Debito
@@ -81,7 +84,7 @@ namespace BankAPI.Repositories
             catch (Exception e)
             {
                 Console.WriteLine(e);
-                
+
             }
 
             return new List<ContaExtrato>();

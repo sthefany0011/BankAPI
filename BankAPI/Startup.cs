@@ -44,7 +44,7 @@ namespace BankAPI
                     new MySqlServerVersion(new Version()), builder =>
             builder.MigrationsAssembly("BankAPI")));
 
-            services.AddTransient<ContaRepository>();
+            services.AddTransient<IContaRepository, ContaRepository>();
 
         }
 

@@ -13,11 +13,11 @@ namespace BankAPI.Controllers
     public class ContaBancariasController : ControllerBase
     {
        
-        private readonly ContaRepository _contaRepository;
+        private readonly IContaRepository _contaRepository;
 
    
 
-        public ContaBancariasController( ContaRepository contaRepository)
+        public ContaBancariasController( IContaRepository contaRepository)
         {
         
             _contaRepository = contaRepository;
@@ -45,15 +45,18 @@ namespace BankAPI.Controllers
 
                
                 //Adicionar no banco de dados SEM PASSAR NO SERVICE
-                _contaRepository.Credito(_historicoEntity);
-
-                
-                // retornar sucesso = true ou false, valor creditado, saldo
-                return Ok(new OperacaoRetornoModel
+               if(_contaRepository.Credito(_historicoEntity))
                 {
-                    Saldo = _contaRepository.Saldo(model),
-                    Valor = model.Valor
-                });
+                    // retornar sucesso = true ou false, valor creditado, saldo
+                    return Ok(new OperacaoRetornoModel
+                    {
+                        Saldo = _contaRepository.Saldo(model),
+                        Valor = model.Valor
+                    });
+                }
+
+                return BadRequest(new { msg = "Ocorreum um erro ao adicionar no banco" });
+
             }
             else
             {
