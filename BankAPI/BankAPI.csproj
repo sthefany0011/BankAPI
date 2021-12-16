@@ -23,6 +23,7 @@
     <Compile Remove="Controllers\WeatherForecastController.cs" />
     <Compile Remove="Models\RetornoModel.cs" />
     <Compile Remove="WeatherForecast.cs" />
+    <Compile Remove="_context\List.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -39,6 +40,7 @@
 
   <ItemGroup>
     <Folder Include="Services\" />
+    <Folder Include="_context\" />
   </ItemGroup>
 
   <ProjectExtensions><VisualStudio><UserProperties appsettings_1json__JsonSchema="" /></VisualStudio></ProjectExtensions>

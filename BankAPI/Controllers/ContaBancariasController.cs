@@ -108,7 +108,6 @@ namespace BankAPI.Controllers
 
             var extrato = _contaRepository.FindByAccount(contaBancaria);
 
-            //"2021-12-03T09:35:30:2220Z" Format Dates / Formatar data para padrão brasileiro no csharp
 
             //(contaBancaria);
             var result = new
@@ -116,8 +115,6 @@ namespace BankAPI.Controllers
                 Operacoes = extrato,
                 Saldo = _contaRepository.Saldo(new HistoricoModel { ContaBancaria = contaBancaria })
             };
-
-            //var Saldo = Saldo(model);
 
             return Ok(result);
         }
@@ -127,20 +124,7 @@ namespace BankAPI.Controllers
 
         public ActionResult<HistoricoEntity> RelatorioGet(int contaBancaria, int anual)
         {
-
-
-            var result = _context.Historico
-                .Where(context => context.ContaBancaria == contaBancaria && context.Data.Year == anual)
-                .GroupBy(item => item.Data.Month).Select(context => new
-                {
-                    Mês = context.Key, //context.FirstOrDefault().Data.Month,
-                    Credito = context.Where(c => c.Operacao == Models.Data.Entities.HistoricoOperacao.Credito).Sum(c => c.Valor),
-                    Debito = context.Where(c => c.Operacao == Models.Data.Entities.HistoricoOperacao.Debito).Sum(c => c.Valor),
-                    Saldo = context.Sum(c => c.Operacao == Models.Data.Entities.HistoricoOperacao.Debito ? -c.Valor : c.Valor)
-                });
-
-
-            return Ok(result);
+            return Ok(_contaRepository.FindBy(contaBancaria,anual));
         }
 
     }

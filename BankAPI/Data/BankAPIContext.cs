@@ -18,6 +18,7 @@ namespace BankAPI.Data
         }
 
         public DbSet<Entities.HistoricoEntity> Historico { get; set; }
-        
+
+       
     }
 }

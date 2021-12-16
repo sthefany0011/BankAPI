@@ -62,14 +62,6 @@ namespace BankAPI.Repositories
 
         //Extrato
 
-        
-
-        public List<HistoricoEntity>FindBy(int contaBancaria)
-        {
-
-            return _context.Historico.ToList();
-        }
-
         public List<ContaExtrato> FindByAccount(int contaBancaria)
         {
             try
@@ -82,18 +74,42 @@ namespace BankAPI.Repositories
                             Operacao = (_context.Operacao == 0) ? "Crédito" : "Débito",
                             Valor = _context.Valor,
                             Data = _context.Data
-                        }
-                    );
+                        }).ToList();
+
+                return extrato;
             }
             catch (Exception e)
             {
                 Console.WriteLine(e);
-                return new List<ContaExtrato>();
+                
             }
 
-            return new List<ContaExtrato>(contaBancaria);
+            return new List<ContaExtrato>();
+        }
 
+        //Relatório
 
+        public List<RelatorioModel> FindBy(int contaBancaria, int anual)
+        {
+            try
+            {
+                var result = _context.Historico
+                    .Where(context => context.ContaBancaria == contaBancaria && context.Data.Year == anual)
+                    .GroupBy(item => item.Data.Month).Select(context => new RelatorioModel
+                    {
+                        Mes = context.Key, //context.FirstOrDefault().Data.Month,
+                        Credito = context.Where(c => c.Operacao == Models.Data.Entities.HistoricoOperacao.Credito).Sum(c => c.Valor),
+                        Debito = context.Where(c => c.Operacao == Models.Data.Entities.HistoricoOperacao.Debito).Sum(c => c.Valor),
+                        Saldo = context.Sum(c => c.Operacao == Models.Data.Entities.HistoricoOperacao.Debito ? -c.Valor : c.Valor)
+                    }).ToList();
+
+                return result;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                return new List<RelatorioModel>();
+            }
         }
     }
 }
